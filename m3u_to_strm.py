@@ -14,7 +14,7 @@ def parse_m3u(url, output_path):
             m3u_data = f.read()
 
     # Extract the stream URLs from the M3U data
-    stream_urls = []
+
     lines = iter(m3u_data.splitlines())
     num_lines = m3u_data.count('\n')
     with tqdm(desc="Parsing M3U file", total=num_lines) as pbar:
@@ -27,7 +27,11 @@ def parse_m3u(url, output_path):
 
                 if '[Series]' in line:
                     outline = filename + ';' + 'Series;' + next(lines)
+                if 'Series:' in line:
+                    outline = filename + ';' + 'Series;' + next(lines)
                 elif '[VOD]' in line:
+                    outline = filename + ';' + 'Movies;' + next(lines)
+                elif 'VOD:' in line:
                     outline = filename + ';' + 'Movies;' + next(lines)
                 else:
                     continue
@@ -37,7 +41,42 @@ def parse_m3u(url, output_path):
             pbar.update(2)
             pbar.refresh()
             pbar.miniters = 1
-    return stream_urls
+
+def get_m3u_VOD_groups(m3uData):
+    # Extract the stream URLs from the M3U data
+    streamGroups = []
+
+    lines = iter(m3uData.splitlines())
+    num_lines = m3uData.count('\n')
+    with tqdm(desc="Buildin M3U group list", total=num_lines) as pbar:
+        for line in lines:
+            if line.startswith('#EXTINF'):
+                regExResult = re.search('group-title="([^"]+)"', line)
+
+                if regExResult:
+                  groupname = regExResult.group(1)
+
+                  streamGroups.append(groupname)
+
+            pbar.update(2)
+            pbar.refresh()
+            pbar.miniters = 1
+        
+        uniqueStreamGroups = set(streamGroups)
+        streamGroups = list(uniqueStreamGroups)
+
+    return streamGroups
+
+def load_m3u_file(url):
+    # Check if the URL is a local file path or a remote URL
+    if url.startswith('http') or url.startswith('https'):
+        response = urllib.request.urlopen(url)
+        m3uData = response.read().decode()
+    else:
+        with open(url, 'r') as f:
+            m3uData = f.read()
+
+    return m3uData
 
 def create_strm_nfo(stream_url, output_path):
     line = stream_url.split(';')
@@ -64,4 +103,9 @@ if __name__ == '__main__':
     m3u_url = sys.argv[1]
     output_path = sys.argv[2]
 
-    parse_m3u(m3u_url, output_path)
+    m3uData = load_m3u_file(m3u_url)
+
+    streamGroups = get_m3u_VOD_groups(m3uData)
+    print("Count of new_list: ", len(streamGroups))
+    
+    #parse_m3u(m3u_url, output_path)
