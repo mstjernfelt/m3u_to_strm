@@ -3,6 +3,7 @@ import sys
 import urllib.request
 import re
 from tqdm import tqdm
+from m3u.groups import groups
 
 def parse_m3u(url, output_path):
     # Check if the URL is a local file path or a remote URL
@@ -53,7 +54,18 @@ def get_m3u_VOD_groups(m3uData):
             if line.startswith('#EXTINF'):
                 regExResult = re.search('group-title="([^"]+)"', line)
 
-                if regExResult:
+                if '[Series]' in line:
+                    include = True
+                if 'Series:' in line:
+                    include = True
+                elif '[VOD]' in line:
+                    include = True
+                elif 'VOD:' in line:
+                    include = True
+                else:
+                    include = False
+
+                if regExResult and include:
                   groupname = regExResult.group(1)
 
                   streamGroups.append(groupname)
@@ -73,7 +85,7 @@ def load_m3u_file(url):
         response = urllib.request.urlopen(url)
         m3uData = response.read().decode()
     else:
-        with open(url, 'r') as f:
+        with open(url, 'r', encoding="utf8") as f:
             m3uData = f.read()
 
     return m3uData
@@ -105,7 +117,11 @@ if __name__ == '__main__':
 
     m3uData = load_m3u_file(m3u_url)
 
-    streamGroups = get_m3u_VOD_groups(m3uData)
-    print("Count of new_list: ", len(streamGroups))
+    groupData = get_m3u_VOD_groups(m3uData)
+
+    m3uGroups = groups(groupData)
+    m3uGroups.Save()
+
+    print("Count of new_list: ", len(groupData))
     
     #parse_m3u(m3u_url, output_path)

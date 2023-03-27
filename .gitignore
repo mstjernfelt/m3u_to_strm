@@ -1,6 +1,5 @@
-Series/*
-Movies/*
-.local/*
-.vscode/*
-__pycache__/*
+.local
+.vscode
+__pycache__
 m3u_to_strm.json
+groups.json
