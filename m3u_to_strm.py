@@ -2,10 +2,11 @@ import os
 import sys
 import urllib.request
 import re
+import argparse
 from tqdm import tqdm
 from m3u.groups import groups
 
-def parse_m3u(url, output_path):
+def parse_m3u(url, output_path, m3uGroups):
     # Check if the URL is a local file path or a remote URL
     if url.startswith('http') or url.startswith('https'):
         response = urllib.request.urlopen(url)
@@ -14,13 +15,18 @@ def parse_m3u(url, output_path):
         with open(url, 'r') as f:
             m3u_data = f.read()
 
-    # Extract the stream URLs from the M3U data
+    # Extract the stream URLs from the m3u data
 
     lines = iter(m3u_data.splitlines())
     num_lines = m3u_data.count('\n')
-    with tqdm(desc="Parsing M3U file", total=num_lines) as pbar:
+    with tqdm(desc="Parsing m3u file", total=num_lines) as pbar:
         for line in lines:
             if line.startswith('#EXTINF'):
+                grouptitle = re.search('group-title="([^"]+)"', line)
+
+                if grouptitle is None and grouptitle.group(1) not in m3uGroups:
+                    continue
+
                 name = re.search('tvg-name="([^"]+)"', line)
                 if name and 'tvg-name' in name.group(0):
                     filename = name.group(1)
@@ -44,12 +50,12 @@ def parse_m3u(url, output_path):
             pbar.miniters = 1
 
 def get_m3u_VOD_groups(m3uData):
-    # Extract the stream URLs from the M3U data
+    # Extract the stream URLs from the m3u data
     streamGroups = []
 
     lines = iter(m3uData.splitlines())
     num_lines = m3uData.count('\n')
-    with tqdm(desc="Buildin M3U group list", total=num_lines) as pbar:
+    with tqdm(desc="Building m3u group list", total=num_lines) as pbar:
         for line in lines:
             if line.startswith('#EXTINF'):
                 regExResult = re.search('group-title="([^"]+)"', line)
@@ -108,20 +114,27 @@ def create_strm_nfo(stream_url, output_path):
             f.write(line[2])
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print('Usage: python m3u_to_strm.py <input m3u file url or local path> <output directory>')
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description='Converts an m3u file to STRM files for Kodi.')
+    parser.add_argument('--m3u_file', type=str, help='Input m3u file (either a URL or a local path)')
+    parser.add_argument('--output_dir', type=str, help='Output directory for STRM files')
+    parser.add_argument('--generate_groups', action='store_true', help='Generate groups for VOD entries')
+    args = parser.parse_args()
 
-    m3u_url = sys.argv[1]
-    output_path = sys.argv[2]
+    m3u_url = args.m3u_file
+    output_path = args.output_dir
+    generate_groups = args.generate_groups
+
+    if not m3u_url or not output_path:
+        parser.print_help()
+        sys.exit(1)
 
     m3uData = load_m3u_file(m3u_url)
 
-    groupData = get_m3u_VOD_groups(m3uData)
+    if generate_groups:
+        groupData = get_m3u_VOD_groups(m3uData)
+        m3uGroups = groups(groupData)
+        m3uGroups.Save()
+    else:
+        m3uGroups = groups();
 
-    m3uGroups = groups(groupData)
-    m3uGroups.Save()
-
-    print("Count of new_list: ", len(groupData))
-    
-    #parse_m3u(m3u_url, output_path)
+    parse_m3u(m3u_url, output_path, m3uGroups)
