@@ -3,28 +3,24 @@ import sys
 import urllib.request
 import re
 import argparse
+import json
 from tqdm import tqdm
 from m3u.groups import groups
 
-def parse_m3u(url, output_path, m3uGroups):
-    # Check if the URL is a local file path or a remote URL
-    if url.startswith('http') or url.startswith('https'):
-        response = urllib.request.urlopen(url)
-        m3u_data = response.read().decode()
-    else:
-        with open(url, 'r') as f:
-            m3u_data = f.read()
+m3uGroups = '';
 
-    # Extract the stream URLs from the m3u data
-
+def parse_m3u(url, output_path, m3u_data):
     lines = iter(m3u_data.splitlines())
     num_lines = m3u_data.count('\n')
     with tqdm(desc="Parsing m3u file", total=num_lines) as pbar:
         for line in lines:
             if line.startswith('#EXTINF'):
-                grouptitle = re.search('group-title="([^"]+)"', line)
+                grouptitleMatch = re.search('group-title="([^"]+)"', line)
 
-                if grouptitle is None and grouptitle.group(1) not in m3uGroups:
+                if grouptitleMatch is None:
+                    continue
+
+                if not m3uGroups.Include(grouptitleMatch.group(1)):
                     continue
 
                 name = re.search('tvg-name="([^"]+)"', line)
@@ -87,6 +83,8 @@ def get_m3u_VOD_groups(m3uData):
 
 def load_m3u_file(url):
     # Check if the URL is a local file path or a remote URL
+    print("Loading m3u playlist...")
+
     if url.startswith('http') or url.startswith('https'):
         response = urllib.request.urlopen(url)
         m3uData = response.read().decode()
@@ -137,4 +135,4 @@ if __name__ == '__main__':
     else:
         m3uGroups = groups();
 
-    parse_m3u(m3u_url, output_path, m3uGroups)
+    parse_m3u(m3u_url, output_path, m3uData)
