@@ -2,40 +2,58 @@ import json
 import os
 
 class groups:
-    groupData = {'groups': []}
+    groupData = ''
 
-    def __init__(self, groupData):
-        self.Set(groupData)
+    def __init__(self, inGroupData = None):
+        if inGroupData is not None:
+            self.Set(inGroupData)
+        else:
+            self.Load()
 
     def Load(self):
         if os.path.exists('groups.json'):
             with open('groups.json', 'r') as f:
                 self.groupData = json.load(f)
         else:
-            self.groupData = {'groups': ['include']} # change to a dictionary with a list value
+            self.groupData = {'groups': []}
             open('groups.json', 'w')
+
+        # Set "include" subvalue to True for new groups
+        existing_groups = self.groupData['groups']
+        existing_names = [g['name'] for g in existing_groups]
+
+        for g in existing_names:
+            if g not in [group['name'] for group in self.groupData['groups']]:
+                self.groupData['groups'].append({'name': g, 'include': False})
 
         return {'groups': self.groupData}
 
     def Set(self, streamGroups):
         # Load existing JSON data from file
         self.Load()
-        existing_groups = self.groupData
-
-        # Convert JSON data to Python list of groups
         existing_groups = self.groupData['groups']
 
         # Remove any groups that are no longer in the new list
-        existing_groups = [g for g in existing_groups if g in streamGroups]
+        existing_names = [g['name'] for g in existing_groups]
+        existing_groups = [g for g in existing_groups if g['name'] in streamGroups]
 
         # Add any new groups to the list
         for g in streamGroups:
-            if g not in existing_groups:
-                existing_groups.append(g)
+            if g not in existing_names:
+                existing_groups.append({'name': g, 'include': True})
+
+        # Remove any groups that are not in the new list
+        new_names = [g['name'] for g in existing_groups]
+        for g in existing_groups:
+            if g['name'] not in new_names:
+                existing_groups.remove(g)
 
         # Convert Python data structure back to JSON format
         self.groupData = {'groups': existing_groups}
-   
+
+        # Save updated JSON data to file
+        self.Save()
+
     def Save(self):
         json_data = json.dumps(self.groupData, indent=4)
 
