@@ -44,7 +44,9 @@ def parse_m3u(output_path, m3u_data):
                     year = get_Title_Year(filename)
                     # title = get_Cleaned_Title(filename)
 
-                    if int(year) > 2010:
+                    if int(year) > 2010 and titleType == 'Movies':
+                        create_strm_nfo(outline, output_path)
+                    else:
                         create_strm_nfo(outline, output_path)
 
             pbar.update(2)
@@ -140,6 +142,42 @@ def create_strm_nfo(stream_url, output_path):
 
         with open(output_strm, 'w', encoding='utf-8') as f:
             f.write(line[2])
+
+def get_Urls_from_m3u(fileName):
+    url_extinf_pattern = re.compile(r'#EXTINF:-1\s+(.*?)\n(http[s]?://\S+)')
+
+    with open(fileName, 'r', encoding="utf-8") as f:
+        contents = f.read()
+        matches = url_extinf_pattern.findall(contents)
+        url_dict = {}
+
+        for match in matches:
+            extinf = match[0]
+            url = match[1]
+            url_dict[url] = extinf
+
+    return(url_dict)
+
+def get_M3u_Diffs(oldFile, newFile):
+    oldM3uDict = get_Urls_from_m3u('.local\playlist.m3u')
+    newM3uDict = get_Urls_from_m3u('.local\\new_playlist.m3u')
+
+    keys1 = set(oldM3uDict.keys())
+    keys2 = set(newM3uDict.keys())
+    diff_keys1 = keys1 - keys2
+    diff_keys2 = keys2 - keys1
+
+    diff_items1 = {k: oldM3uDict[k] for k in diff_keys1}
+    diff_items2 = {k: newM3uDict[k] for k in diff_keys2}
+
+    result = {**diff_items1, **diff_items2}
+
+    # Print the result dictionary
+    # print("Differences:")
+    # for url in result.keys():
+    #     print(url)    
+
+    return(result)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Converts an m3u file to STRM files for Kodi.')
