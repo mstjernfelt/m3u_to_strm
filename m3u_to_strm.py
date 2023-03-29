@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import os
 import sys
 import urllib.request
@@ -9,7 +11,7 @@ from m3u.groups import groups
 
 m3uGroups = '';
 
-def parse_m3u(url, output_path, m3u_data):
+def parse_m3u(output_path, m3u_data):
     lines = iter(m3u_data.splitlines())
     num_lines = m3u_data.count('\n')
     with tqdm(desc="Parsing m3u file", total=num_lines) as pbar:
@@ -28,22 +30,50 @@ def parse_m3u(url, output_path, m3u_data):
                     filename = name.group(1)
                     filename = re.sub(r'[<>:"/\\|?*\x00-\x1f.]', '', filename)
 
-                if '[Series]' in line:
-                    outline = filename + ';' + 'Series;' + next(lines)
-                if 'Series:' in line:
-                    outline = filename + ';' + 'Series;' + next(lines)
-                elif '[VOD]' in line:
-                    outline = filename + ';' + 'Movies;' + next(lines)
-                elif 'VOD:' in line:
-                    outline = filename + ';' + 'Movies;' + next(lines)
-                else:
-                    continue
+                    groupTitle = re.sub(r'[<>:"/\\|?*\x00-\x1f.]', '', grouptitleMatch.group(1))
 
-                create_strm_nfo(outline, output_path)
+                    if '[Series]' in line or 'Series:' in line:
+                        titleType = 'Series'
+                    elif '[VOD]' in line or 'VOD:' in line:
+                        titleType = 'Movies'
+                    else:
+                        continue
+
+                    outline = filename + ';' + f'{titleType}\{groupTitle}\;' + next(lines)
+                    
+                    year = get_Title_Year(filename)
+                    # title = get_Cleaned_Title(filename)
+
+                    if int(year) > 2010:
+                        create_strm_nfo(outline, output_path)
 
             pbar.update(2)
             pbar.refresh()
             pbar.miniters = 1
+
+def get_Title_Year(title):
+
+    year_pattern = r"\[(\d{4})\]"  # matches a four-digit year
+
+    # find the year in the modified string
+    year_match = re.search(year_pattern, title)
+
+    if year_match:
+        year = year_match.group(1)
+    else:
+        year = 0
+        
+    return(year)
+
+def get_Cleaned_Title(title):
+
+    pattern = r"\[[^\]]*\]"  # matches any square brackets and the characters inside them
+    year_pattern = r"\b\d{4}\b"  # matches a four-digit year
+
+    # find all matches of the pattern in the string and replace them with an empty string
+    string_without_brackets = re.sub(pattern, "", title)
+
+    return string_without_brackets
 
 def get_m3u_VOD_groups(m3uData):
     # Extract the stream URLs from the m3u data
@@ -108,7 +138,7 @@ def create_strm_nfo(stream_url, output_path):
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
-        with open(output_strm, 'w') as f:
+        with open(output_strm, 'w', encoding='utf-8') as f:
             f.write(line[2])
 
 if __name__ == '__main__':
@@ -120,6 +150,10 @@ if __name__ == '__main__':
 
     m3u_url = args.m3u_file
     output_path = args.output_dir
+
+    if not output_path.endswith("\\"):
+        output_path += "\\"
+
     generate_groups = args.generate_groups
 
     if not m3u_url or not output_path:
@@ -135,4 +169,4 @@ if __name__ == '__main__':
     else:
         m3uGroups = groups();
 
-    parse_m3u(m3u_url, output_path, m3uData)
+    parse_m3u(output_path, m3uData)

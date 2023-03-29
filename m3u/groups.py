@@ -29,9 +29,6 @@ class groups:
         return {'groups': self.groupData}
 
     def Include(self, groupTitle) -> bool:
-        if groupTitle not in self.groupData:
-            return(False)
-
         for group in self.groupData["groups"]:
             if groupTitle in group.values():
                 return(group['include'])
