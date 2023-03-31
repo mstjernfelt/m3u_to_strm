@@ -1,6 +1,6 @@
 import requests
 
-class GetRating:
+class ImdbManagement:
 
     def __init__(self, title = None):
         # Send a request to the imdb-api.com API to search for the movie or TV show
