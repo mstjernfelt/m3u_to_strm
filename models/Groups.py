@@ -16,15 +16,6 @@ class Groups:
         else:
             self.load()
 
-    # def init(self, m3u_data = None, inProvider = None, generate_groups = None):
-    #     self.provider = inProvider 
-
-    #     if generate_groups:
-    #         group_data = self.get_groups(m3u_data)
-    #         self.set(group_data)
-    #     else:
-    #         self.load()
-
     def load(self):
         if os.path.exists(f'.local/{self.provider}/groups.json'):
             try:

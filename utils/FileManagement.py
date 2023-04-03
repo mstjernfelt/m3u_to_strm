@@ -1,5 +1,6 @@
 import urllib.request
 import os
+import re
 
 class FileManagement():
     def get_m3u_file(url, provider) -> str:
@@ -18,3 +19,10 @@ class FileManagement():
             return playlistSavePath
         else:
             return url
+        
+    def cleanup_filename(filename) -> str:
+        pattern = r"[@$%&\\/:\*\?\"'<>\|~`#\^\+=\{\}\[\];!]"
+
+        new_string = re.sub(pattern, "", filename)
+
+        return(new_string)
