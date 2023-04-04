@@ -3,7 +3,7 @@ import logging
 class Logger:
     def __init__(self, provider= None):
         # Configure logging
-        filename = f".local\\{provider}\\logfile.log"
+        filename = f".local/{provider}/logfile.log"
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
 

@@ -26,7 +26,7 @@ class M3uManagement:
 
         playlistPath = FileManagement.get_m3u_file(self.m3u_Url, self.provider)
 
-        self.m3u_data = self.diffs(f'.local\{self.provider}\current_playlist.m3u', playlistPath)
+        self.m3u_data = self.diffs(f'.local/{self.provider}/current_playlist.m3u', playlistPath)
 
         self.groups = Groups(generate_groups = in_generate_groups, m3u_data=self.m3u_data, inProvider=self.provider)
         self.logger = Logger(provider=self.provider)
@@ -127,11 +127,11 @@ class M3uManagement:
         org_sub_folder = params['sub_folder']
 
         if titleType == 'Series':
-            output_path = os.path.join(output_path, f'{titleType}\\{sub_folder}')
-            org_output_path = os.path.join(output_path, f'{org_titleType}\\{org_sub_folder}')
+            output_path = os.path.join(output_path, f'{titleType}/{sub_folder}')
+            org_output_path = os.path.join(output_path, f'{org_titleType}/{org_sub_folder}')
         else:
-            output_path = os.path.join(output_path, f'{titleType}\\{filename}')
-            org_output_path = os.path.join(output_path, f'{org_titleType}\\{org_filename}')
+            output_path = os.path.join(output_path, f'{titleType}/{filename}')
+            org_output_path = os.path.join(output_path, f'{org_titleType}/{org_filename}')
 
         output_strm = os.path.join(output_path, filename + '.strm')
 

@@ -7,7 +7,7 @@ class FileManagement():
         # Check if the URL is a local file path or a remote URL
         print("Downloading m3u playlist...")
 
-        path = f'.local\\{provider}\\'
+        path = f'.local/{provider}/'
 
         playlistSavePath = f'{path}playlist.m3u'
 
