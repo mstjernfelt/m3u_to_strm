@@ -4,6 +4,7 @@ from tqdm import tqdm
 from models.Groups import Groups
 from utils.FileManagement import FileManagement
 from models.Logger import Logger
+from models.MovieDatabasesHelpers import TheMovieDB
 
 class M3uManagement:
 
@@ -13,10 +14,11 @@ class M3uManagement:
     m3u_Url = None
     m3u_data = None
 
-    num_titles_sikpped = 0
+    num_titles_skipped = 0
     num_new_series = 0
     num_new_movies = 0
     num_errors = 0
+    num_not_in_moviedatabase = 0
 
     def __init__(self, in_group_data = None, in_provider = None, in_generate_groups = None, in_m3u_url = None):
         self.provider = in_provider
@@ -30,24 +32,34 @@ class M3uManagement:
         self.logger = Logger(provider=self.provider)
 
     def parse(self, output_path):
+
+        the_movie_db = TheMovieDB()
+
+        movies_to_include = the_movie_db.get_popular_movies(from_year = 2000, pages=3)
+        tvshows_to_include = the_movie_db.get_popular_tvshows(from_year = 2000, pages=3)        
+
         num_lines = len(self.m3u_data.items())
         
         with tqdm(desc="Parsing m3u file", total=num_lines) as pbar:
             for url, line in self.m3u_data.items():
+
+                pbar.update(1)
+                pbar.refresh()
+
                 tvgIdMatch = re.search('tvg-id=""', line)
                 
                 if not tvgIdMatch:
-                    self.num_titles_sikpped += 1
+                    self.num_titles_skipped += 1
                     continue
 
                 grouptitleMatch = re.search('group-title="([^"]+)"', line)
 
                 if grouptitleMatch is None:
-                    self.num_titles_sikpped += 1
+                    self.num_titles_skipped += 1
                     continue
 
                 if not self.groups.include(grouptitleMatch.group(1)):
-                    self.num_titles_sikpped += 1
+                    self.num_titles_skipped += 1
                     continue
 
                 name = re.search('tvg-name="([^"]+)"', line)
@@ -69,9 +81,20 @@ class M3uManagement:
                     if titleType == 'Series':
                         groupTitle = re.sub(r'[<>:"/\\|?*\x00-\x1f.]', '', grouptitleMatch.group(1))                                                
                         sub_folder = subfolder_search.group(1)
+
+                        if not the_movie_db.search(sub_folder, tvshows_to_include):
+                            self.num_not_in_moviedatabase += 1
+                            continue
                     else:
                         groupTitle = grouptitleMatch.group(1)
                         filename = name.group(1)
+
+                        # remove [PRE] and [dddd] substrings and brackets using regular expressions
+                        title = re.sub(r'\[[^\]]*\]', '', filename).strip()
+
+                        if not the_movie_db.search(title, movies_to_include):
+                            self.num_not_in_moviedatabase += 1
+                            continue
 
                     params = {'filename': filename, 'titleType': titleType, 'groupTitle': groupTitle, 'sub_folder': sub_folder, 'url': url}
 
@@ -82,10 +105,6 @@ class M3uManagement:
                             self.num_new_movies += 1
                     else:
                         self.num_errors += 1
-
-
-                pbar.update(1)
-                pbar.refresh()
 
     def create_strm(self, params, output_path) -> bool:
         global share_user_name
@@ -111,8 +130,8 @@ class M3uManagement:
             output_path = os.path.join(output_path, f'{titleType}\\{sub_folder}')
             org_output_path = os.path.join(output_path, f'{org_titleType}\\{org_sub_folder}')
         else:
-            output_path = os.path.join(output_path, f'{titleType}\\{groupTitle}\\{filename}')
-            org_output_path = os.path.join(output_path, f'{org_titleType}\\{org_groupTitle}\\{org_filename}')
+            output_path = os.path.join(output_path, f'{titleType}\\{filename}')
+            org_output_path = os.path.join(output_path, f'{org_titleType}\\{org_filename}')
 
         output_strm = os.path.join(output_path, filename + '.strm')
 
