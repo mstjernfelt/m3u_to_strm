@@ -12,7 +12,7 @@ class FileManagement():
         playlistSavePath = f'{path}playlist.m3u'
 
         if not os.path.exists(path):
-            os.mkdir(path)
+            os.makedirs(path, exist_ok=True)
 
         if url.startswith('http') or url.startswith('https'):
             urllib.request.urlretrieve(url, playlistSavePath)
