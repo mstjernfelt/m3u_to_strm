@@ -33,6 +33,8 @@ class M3uManagement:
 
     def parse(self, output_path):
 
+        output_path = os.path.join(output_path, self.provider)
+
         the_movie_db = TheMovieDB()
 
         movies_to_include = the_movie_db.get_popular_movies(from_year = 2000, pages=3)

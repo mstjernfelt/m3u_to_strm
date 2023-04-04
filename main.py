@@ -39,8 +39,6 @@ if __name__ == '__main__':
     if output_path[-1] == '/':
         output_path = output_path[:-1]  
 
-    output_path = os.path.join(output_path, provider)
-
     m3u_manager = M3uManagement(in_provider=provider, in_generate_groups=generate_groups, in_m3u_url=m3u_url)
     m3u_manager.parse(output_path)
 
