@@ -42,7 +42,7 @@ if __name__ == '__main__':
     m3u_manager = M3uManagement(in_provider=provider, in_generate_groups=generate_groups, in_m3u_url=m3u_url)
     m3u_manager.parse(output_path)
 
-    shutil.copy(playlistPath, f'.local/{provider}/current_playlist.m3u')
+    #shutil.copy(playlistPath, f'.local/{provider}/current_playlist.m3u')
 
     print("Finished parsing m3u playlist")
     print(f" - {m3u_manager.num_titles_skipped} titles skipped")
