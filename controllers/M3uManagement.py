@@ -21,16 +21,29 @@ class M3uManagement:
     num_not_in_moviedatabase = 0
 
     def __init__(self, in_group_data = None, in_provider = None, in_generate_groups = None, in_m3u_url = None):
+
         self.provider = in_provider
+        Logger.info(f'Provider has been set to {self.provider}.')
+        
+        self.logger = Logger(provider=self.provider)
+
         self.m3u_Url = in_m3u_url
 
         file_management = FileManagement()
+
+        Logger.info(f'Loading playlist from {self.m3u_Url}.')
+
         file_management.get_m3u_file(self.m3u_Url, self.provider)
+
+        Logger.info(f'Loaded playlist successfully.')
+
+        Logger.info(f'Working out differences since last run.')
 
         self.m3u_data = self.diffs(file_management.m3u_tempfile_path, file_management.m3u_file_path)
 
+        Logger.info(f'Found {len(self.m3u_data)} differences to process.')
+
         self.groups = Groups(generate_groups = in_generate_groups, m3u_data=self.m3u_data, inProvider=self.provider)
-        self.logger = Logger(provider=self.provider)
 
     def parse(self, output_path):
 
@@ -113,6 +126,13 @@ class M3uManagement:
                             self.num_new_movies += 1
                     else:
                         self.num_errors += 1
+
+            Logger.info("Finished parsing m3u playlist")
+            Logger.info(f"{self.num_titles_skipped} titles skipped")
+            Logger.info(f"{self.num_new_movies} new movies were added")
+            Logger.info(f"{self.num_new_series} new tv show episodes were added")
+            Logger.info(f"{self.num_errors} errors writing strm file")
+            Logger.info(f"{self.num_not_in_moviedatabase} Not in movie database search")                        
 
     def create_strm(self, params, output_path) -> bool:
         global share_user_name

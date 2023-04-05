@@ -41,14 +41,3 @@ if __name__ == '__main__':
 
     m3u_manager = M3uManagement(in_provider=provider, in_generate_groups=generate_groups, in_m3u_url=m3u_url)
     m3u_manager.parse(output_path)
-
-    #shutil.copy(playlistPath, f'.local/{provider}/current_playlist.m3u')
-
-    print("Finished parsing m3u playlist")
-    print(f" - {m3u_manager.num_titles_skipped} titles skipped")
-    print(f" - {m3u_manager.num_new_movies} new movies were added")
-    print(f" - {m3u_manager.num_new_series} new tv show episodes were added")
-    print(f" - {m3u_manager.num_errors} errors writing strm file")
-    print(f" - {m3u_manager.num_not_in_moviedatabase} Not in movie database search")
-    
-          
