@@ -24,9 +24,10 @@ class M3uManagement:
         self.provider = in_provider
         self.m3u_Url = in_m3u_url
 
-        playlistPath = FileManagement.get_m3u_file(self.m3u_Url, self.provider)
+        file_management = FileManagement()
+        file_management.get_m3u_file(self.m3u_Url, self.provider)
 
-        self.m3u_data = self.diffs(f'.local/{self.provider}/current_playlist.m3u', playlistPath)
+        self.m3u_data = self.diffs(file_management.m3u_tempfile_path, file_management.m3u_file_path)
 
         self.groups = Groups(generate_groups = in_generate_groups, m3u_data=self.m3u_data, inProvider=self.provider)
         self.logger = Logger(provider=self.provider)
@@ -37,7 +38,7 @@ class M3uManagement:
 
         the_movie_db = TheMovieDB()
 
-        movies_to_include = the_movie_db.get_popular_movies(from_year = 2000, pages=3)
+        movies_to_include = the_movie_db.get_popular_movies(from_year = 2000, pages=5)
         tvshows_to_include = the_movie_db.get_popular_tvshows(from_year = 2000, pages=3)        
 
         num_lines = len(self.m3u_data.items())
@@ -63,6 +64,8 @@ class M3uManagement:
                 if not self.groups.include(grouptitleMatch.group(1)):
                     self.num_titles_skipped += 1
                     continue
+                else:
+                    include_from_group = True
 
                 name = re.search('tvg-name="([^"]+)"', line)
                 if name and 'tvg-name' in name.group(0):
@@ -83,8 +86,9 @@ class M3uManagement:
                     if titleType == 'Series':
                         groupTitle = re.sub(r'[<>:"/\\|?*\x00-\x1f.]', '', grouptitleMatch.group(1))                                                
                         sub_folder = subfolder_search.group(1)
+                        title = filename
 
-                        if not the_movie_db.search(sub_folder, tvshows_to_include):
+                        if not the_movie_db.search(sub_folder, tvshows_to_include) and not include_from_group:
                             self.num_not_in_moviedatabase += 1
                             continue
                     else:
@@ -94,11 +98,13 @@ class M3uManagement:
                         # remove [PRE] and [dddd] substrings and brackets using regular expressions
                         title = re.sub(r'\[[^\]]*\]', '', filename).strip()
 
-                        if not the_movie_db.search(title, movies_to_include):
+                        if not the_movie_db.search(title, movies_to_include) and not include_from_group:
                             self.num_not_in_moviedatabase += 1
                             continue
+                        else:
+                            title = re.sub(r"\[(?!\d{4}\])[^]]*\]", "", filename)
 
-                    params = {'filename': filename, 'titleType': titleType, 'groupTitle': groupTitle, 'sub_folder': sub_folder, 'url': url}
+                    params = {'filename': title, 'titleType': titleType, 'groupTitle': groupTitle, 'sub_folder': sub_folder, 'url': url}
 
                     if self.create_strm(params, output_path):
                         if titleType == 'Series':
