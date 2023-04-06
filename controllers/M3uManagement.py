@@ -50,7 +50,7 @@ class M3uManagement:
 
         the_movie_db = TheMovieDB()
 
-        movies_to_include = the_movie_db.get_popular_movies(from_year = 2000, pages=5)
+        movies_to_include = the_movie_db.get_popular_movies(from_year = 1980, pages=3)
         tvshows_to_include = the_movie_db.get_popular_tvshows(from_year = 2000, pages=3)        
 
         num_lines = len(self.m3u_data.items())
