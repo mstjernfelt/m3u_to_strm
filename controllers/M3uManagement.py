@@ -50,8 +50,8 @@ class M3uManagement:
 
         the_movie_db = TheMovieDB()
 
-        movies_to_include = the_movie_db.get_popular_movies(from_year = 1980, pages=3)
-        tvshows_to_include = the_movie_db.get_popular_tvshows(from_year = 2000, pages=3)        
+        #movies_to_include = the_movie_db.get_popular_movies(from_year = 1980, pages=3)
+        #tvshows_to_include = the_movie_db.get_popular_tvshows(from_year = 2000, pages=3)        
 
         num_lines = len(self.m3u_data.items())
         
@@ -100,9 +100,9 @@ class M3uManagement:
                         sub_folder = subfolder_search.group(1)
                         title = filename
 
-                        if not the_movie_db.search(sub_folder, tvshows_to_include) and not include_from_group:
-                            self.num_not_in_moviedatabase += 1
-                            continue
+                        # if not the_movie_db.search(sub_folder, tvshows_to_include) and not include_from_group:
+                        #     self.num_not_in_moviedatabase += 1
+                        #     continue
                     else:
                         groupTitle = grouptitleMatch.group(1)
                         filename = name.group(1)
@@ -110,11 +110,11 @@ class M3uManagement:
                         # remove [PRE] and [dddd] substrings and brackets using regular expressions
                         title = re.sub(r'\[[^\]]*\]', '', filename).strip()
 
-                        if not the_movie_db.search(title, movies_to_include) and not include_from_group:
-                            self.num_not_in_moviedatabase += 1
-                            continue
-                        else:
-                            title = re.sub(r"\[(?!\d{4}\])[^]]*\]", "", filename)
+                        # if not the_movie_db.search(title, movies_to_include) and not include_from_group:
+                        #     self.num_not_in_moviedatabase += 1
+                        #     continue
+                        # else:
+                        title = re.sub(r"\[(?!\d{4}\])[^]]*\]", "", filename)
 
                     params = {'filename': title, 'titleType': titleType, 'groupTitle': groupTitle, 'sub_folder': sub_folder, 'url': url}
 
