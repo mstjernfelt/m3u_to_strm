@@ -8,14 +8,25 @@ class FileManagement():
 
     m3u_file_path = ""
     m3u_tempfile_path = ""
+    logger = None
 
-    def get_m3u_file(self, url, provider) -> str:
+    def __init__(self, in_logger):
+        self.logger = in_logger
+
+    def get_m3u_file(self, url, provider, in_cleanrun=False) -> str:
         # Check if the URL is a local file path or a remote URL
-        print("Downloading m3u playlist...")
+        self.logger.info(f'Loading playlist from {url}.')        
 
         path = f'.local/{provider}/'
 
         self.m3u_file_path = f'{path}playlist.m3u'
+
+        if in_cleanrun:
+            if os.path.exists(self.m3u_file_path):
+                os.remove(self.m3u_file_path)
+                self.logger.info(f"cleanrun was set, the file {self.m3u_file_path} has been deleted.")
+            else:
+                self.logger.info(f"cleanrun was set, The file {self.m3u_file_path} does not exist.")
 
         if os.path.exists(self.m3u_file_path):
             # create a temporary file

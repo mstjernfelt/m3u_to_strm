@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>M3U Editor</title>
+  </head>
+  <body>
+    <h1>M3U Editor</h1>
+    <label for="group">Filter by group:</label>
+    <select id="group" onchange="window.location.href='/?group=' + this.value">
+      <option value="">All</option>
+      {% for group in groups %}
+        <option value="{{ group }}" {% if group == selected_group %}selected{% endif %}>{{ group }}</option>
+      {% endfor %}
+    </select>
+    <form action="/" method="post">
+      {% for item in items %}
+        <div>
+          <input type="text" name="title" value="{{ item.title }}" required>
+          <input type="text" name="url" value="{{ item.url }}" required>
+          <button type="button" onclick="this.closest('div').remove()">Remove</button>
+        </div>
+      {% endfor %}
+      <button type="submit">Save to output_playlist.m3u</button>
+    </form>
+    <script>
+      document.getElementById("group").addEventListener("change", function() {
+        window.location.href = "/?group=" + encodeURIComponent(this.value);
+      });
+    </script>
+  </body>
+</html>
+

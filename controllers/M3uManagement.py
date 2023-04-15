@@ -13,6 +13,7 @@ class M3uManagement:
     provider = None
     m3u_Url = None
     m3u_data = None
+    preview = False
 
     num_titles_skipped = 0
     num_new_series = 0
@@ -20,19 +21,20 @@ class M3uManagement:
     num_errors = 0
     num_not_in_moviedatabase = 0
 
-    def __init__(self, in_group_data = None, in_provider = None, in_generate_groups = None, in_m3u_url = None):
+    def __init__(self, in_group_data = None, in_provider = None, in_generate_groups = None, in_m3u_url = None, in_verbose = False, in_preview=False, in_cleanrun=False):
 
         self.provider = in_provider
-        self.logger = Logger(provider=self.provider)        
+        self.logger = Logger(provider=self.provider, in_verbose = in_verbose)        
         self.logger.info(f'Provider has been set to {self.provider}.')
-        
+
+        self.preview = in_preview
+        self.logger.info(f"preview mode = {self.preview}")
+
         self.m3u_Url = in_m3u_url
 
-        file_management = FileManagement()
+        file_management = FileManagement(in_logger=self.logger)
 
-        self.logger.info(f'Loading playlist from {self.m3u_Url}.')
-
-        file_management.get_m3u_file(self.m3u_Url, self.provider)
+        file_management.get_m3u_file(self.m3u_Url, self.provider, in_cleanrun=in_cleanrun)
 
         self.logger.info(f'Loaded playlist successfully.')
 
@@ -48,10 +50,15 @@ class M3uManagement:
 
         output_path = os.path.join(output_path, self.provider)
 
+        self.logger.info(f"Checking the Move DB for shows and movies to include...")
+
         the_movie_db = TheMovieDB()
 
-        #movies_to_include = the_movie_db.get_popular_movies(from_year = 1980, pages=3)
-        #tvshows_to_include = the_movie_db.get_popular_tvshows(from_year = 2000, pages=3)        
+        movies_to_include = the_movie_db.get_popular_movies(from_year = 1980, pages=3)
+        tvshows_to_include = the_movie_db.get_popular_tvshows(from_year = 2000, pages=3)        
+
+        self.logger.info(f"Movies to include {len(movies_to_include)}")
+        self.logger.info(f"Series to include {len(tvshows_to_include)}")
 
         num_lines = len(self.m3u_data.items())
         
@@ -96,27 +103,24 @@ class M3uManagement:
                     sub_folder = ""
 
                     if titleType == 'Series':
-                        groupTitle = re.sub(r'[<>:"/\\|?*\x00-\x1f.]', '', grouptitleMatch.group(1))                                                
                         sub_folder = subfolder_search.group(1)
                         title = filename
 
-                        # if not the_movie_db.search(sub_folder, tvshows_to_include) and not include_from_group:
-                        #     self.num_not_in_moviedatabase += 1
-                        #     continue
+                        if not the_movie_db.search(sub_folder, tvshows_to_include) and not include_from_group:
+                            self.num_not_in_moviedatabase += 1
+                            continue
                     else:
-                        groupTitle = grouptitleMatch.group(1)
                         filename = name.group(1)
 
                         # remove [PRE] and [dddd] substrings and brackets using regular expressions
-                        title = re.sub(r'\[[^\]]*\]', '', filename).strip()
-
-                        # if not the_movie_db.search(title, movies_to_include) and not include_from_group:
-                        #     self.num_not_in_moviedatabase += 1
-                        #     continue
-                        # else:
+                        #title = re.sub(r'\[[^\]]*\]', '', filename).strip()
                         title = re.sub(r"\[(?!\d{4}\])[^]]*\]", "", filename)
+                        
+                        if not the_movie_db.search(title, movies_to_include) and not include_from_group:
+                            self.num_not_in_moviedatabase += 1
+                            continue
 
-                    params = {'filename': title, 'titleType': titleType, 'groupTitle': groupTitle, 'sub_folder': sub_folder, 'url': url}
+                    params = {'filename': title, 'titleType': titleType, 'sub_folder': sub_folder, 'url': url}
 
                     if self.create_strm(params, output_path):
                         if titleType == 'Series':
@@ -134,6 +138,10 @@ class M3uManagement:
             self.logger.info(f"{self.num_not_in_moviedatabase} Not in movie database search")                        
 
     def create_strm(self, params, output_path) -> bool:
+
+        if self.preview:
+            return True
+
         global share_user_name
         global share_password
 
@@ -144,10 +152,6 @@ class M3uManagement:
         filename = re.sub(r'[<>:"/\\|?*\x00-\x1f.]', '', params['filename'])
         filename = FileManagement.cleanup_filename(filename)
         org_filename = params['filename']
-
-        groupTitle = params['groupTitle']
-        groupTitle = FileManagement.cleanup_filename(groupTitle)
-        org_groupTitle = params['groupTitle']
 
         sub_folder = params['sub_folder']
         sub_folder = FileManagement.cleanup_filename(sub_folder)
